@@ -1,0 +1,50 @@
+name: Bug report
+description: Something looks wrong or broken
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you see instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the site
+        2. Click "Over my head" and pick London
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser & device
+      placeholder: Safari 19 on iPhone 16 / Chrome 140 on macOS
+    validations:
+      required: true
+  - type: dropdown
+    id: data
+    attributes:
+      label: Data source shown in the legend
+      options:
+        - DATA CELESTRAK
+        - DATA CELESTRAK (CACHED)
+        - OFFLINE SAMPLE DATA
+        - Not sure
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: Anything red in the browser dev-tools console.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues first
+          required: true

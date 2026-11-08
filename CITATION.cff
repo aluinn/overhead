@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use OVERHEAD in your work, please cite it as below. Orbital data are from CelesTrak; please credit them too."
+title: "OVERHEAD: real-time visualisation of everything in orbit"
+type: software
+authors:
+  - family-names: McDonald
+    given-names: Aluinn
+repository-code: "https://github.com/aluinn/overhead"
+license: MIT
+version: 0.1.0
+date-released: "2026-11-08"
+keywords:
+  - satellites
+  - orbital mechanics
+  - SGP4
+  - space situational awareness
+  - three.js
+  - visualisation
+references:
+  - type: data
+    title: "CelesTrak: GP element sets and SOCRATES Plus"
+    authors:
+      - family-names: Kelso
+        given-names: T.S.
+    url: "https://celestrak.org"
