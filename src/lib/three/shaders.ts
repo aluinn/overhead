@@ -128,3 +128,69 @@ export const starFragment = /* glsl */ `
     #include <colorspace_fragment>
   }
 `;
+
+/**
+ * Satellite points. Each vertex carries two snapshots (aPrev, aNext) and the
+ * GPU lerps between them with `uAlpha`, so the CPU only uploads once per tick.
+ */
+export const satVertex = /* glsl */ `
+  attribute vec3 aPrev;
+  attribute vec3 aNext;
+  attribute float aKind;
+
+  uniform float uAlpha;
+  uniform float uPixelRatio;
+  uniform float uSelected;
+  uniform float uHovered;
+  uniform vec3 uColors[4];
+  uniform float uSizes[4];
+
+  varying vec3 vColor;
+  varying float vAlpha;
+  varying float vRing;
+
+  void main() {
+    vec3 p = mix(aPrev, aNext, uAlpha);
+    int kind = int(aKind + 0.5);
+    float size = uSizes[kind];
+    vColor = uColors[kind];
+    vAlpha = 0.9;
+    vRing = 0.0;
+
+    float id = float(gl_VertexID);
+    if (id == uSelected) { size = 15.0; vColor = vec3(1.0); vAlpha = 1.0; vRing = 1.0; }
+    else if (id == uHovered) { size = 11.0; vColor = mix(vColor, vec3(1.0), 0.6); vAlpha = 1.0; vRing = 1.0; }
+
+    // A decayed/failed object is parked at the origin: collapse it.
+    bool dead = dot(p, p) < 0.25;
+
+    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+    float dist = length(mv.xyz);
+    // Slightly larger when the camera is close, never vanishing when far.
+    float scale = clamp(3.6 / dist, 0.75, 2.4);
+    gl_PointSize = dead ? 0.0 : size * scale * uPixelRatio;
+    gl_Position = projectionMatrix * mv;
+  }
+`;
+
+export const satFragment = /* glsl */ `
+  varying vec3 vColor;
+  varying float vAlpha;
+  varying float vRing;
+
+  void main() {
+    vec2 c = gl_PointCoord - 0.5;
+    float d = length(c) * 2.0;
+    if (d > 1.0) discard;
+
+    float core = smoothstep(1.0, 0.0, d);
+    float a = pow(core, 1.6);
+    if (vRing > 0.5) {
+      // Hollow reticle ring + dot for hovered / selected objects.
+      float ring = smoothstep(0.08, 0.0, abs(d - 0.82));
+      a = max(ring, smoothstep(0.22, 0.0, d));
+    }
+    gl_FragColor = vec4(vColor * (0.6 + 0.9 * core), a * vAlpha);
+    #include <colorspace_fragment>
+  }
+`;

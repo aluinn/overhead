@@ -33,3 +33,46 @@ body {
 ::selection {
   background: color-mix(in srgb, var(--accent) 35%, transparent);
 }
+
+/* Thin, mission-control scrubber */
+.scrubber {
+  appearance: none;
+  height: 14px;
+  background: transparent;
+  cursor: pointer;
+}
+.scrubber::-webkit-slider-runnable-track {
+  height: 1px;
+  background: var(--line);
+}
+.scrubber::-moz-range-track {
+  height: 1px;
+  background: var(--line);
+}
+.scrubber::-webkit-slider-thumb {
+  appearance: none;
+  width: 9px;
+  height: 9px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  border: 0;
+}
+.scrubber::-moz-range-thumb {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  border: 0;
+}
+.scrubber:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 4px;
+}
+
+button:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
