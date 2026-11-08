@@ -4,6 +4,8 @@
 
 **Every satellite, Starlink train and piece of debris above you, live in your browser.**
 
+*A project by [Aluinn McDonald](https://github.com/aluinn).*
+
 [![CI](https://github.com/aluinn/overhead/actions/workflows/ci.yml/badge.svg)](https://github.com/aluinn/overhead/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/aluinn/overhead/actions/workflows/codeql.yml/badge.svg)](https://github.com/aluinn/overhead/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-38e1ff.svg)](LICENSE)

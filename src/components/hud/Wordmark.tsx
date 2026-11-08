@@ -11,6 +11,17 @@ export function Wordmark() {
       <p className="mt-1.5 hidden font-mono sm:block text-[10px] tracking-[0.18em] text-[var(--muted)]">
         EVERYTHING IN ORBIT, RIGHT NOW
       </p>
+      <p className="mt-1 hidden font-mono text-[9px] tracking-[0.18em] text-[var(--muted)]/70 sm:block">
+        BY{" "}
+        <a
+          href="https://github.com/aluinn"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="pointer-events-auto transition-colors hover:text-[var(--accent)]"
+        >
+          ALUINN MCDONALD
+        </a>
+      </p>
     </header>
   );
 }

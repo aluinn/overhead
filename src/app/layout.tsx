@@ -28,6 +28,8 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   applicationName: "OVERHEAD",
+  authors: [{ name: "Aluinn McDonald", url: "https://github.com/aluinn" }],
+  creator: "Aluinn McDonald",
   keywords: ["satellites", "Starlink", "space debris", "ISS", "orbit", "SGP4", "real-time", "3D"],
   openGraph: { type: "website", siteName: "OVERHEAD", title: TITLE, description: DESCRIPTION },
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },

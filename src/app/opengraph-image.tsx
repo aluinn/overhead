@@ -67,7 +67,7 @@ export default async function Image() {
             )}
           </div>
 
-          <div style={{ display: "flex", fontSize: 22, letterSpacing: 4, color: "#6b7b8f" }}>LIVE 3D TRACKER · NO SIGN-UP</div>
+          <div style={{ display: "flex", fontSize: 22, letterSpacing: 4, color: "#6b7b8f" }}>LIVE 3D TRACKER · NO SIGN-UP · BY ALUINN MCDONALD</div>
         </div>
       </div>
     ),
