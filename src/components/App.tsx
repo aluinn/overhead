@@ -11,6 +11,7 @@ import { TimeControls } from "@/components/hud/TimeControls";
 import { Wordmark } from "@/components/hud/Wordmark";
 import { NearMissFeed } from "@/components/feed/NearMissFeed";
 import { SkyTab } from "@/components/sky/SkyTab";
+import { useEmbedMode } from "@/hooks/useEmbedMode";
 import { useSatellites } from "@/hooks/useSatellites";
 import { useConjunctions } from "@/hooks/useConjunctions";
 import { useSkyAnalysis } from "@/hooks/useObserver";
@@ -25,24 +26,27 @@ function Scene() {
   useSatellites();
   useSkyAnalysis();
   useConjunctions();
+  const embed = useEmbedMode();
   return (
     <main className="relative h-dvh w-full overflow-hidden bg-[var(--bg)]">
       <GlobeClient />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-40 bg-gradient-to-t from-[var(--bg)] to-transparent opacity-80" />
 
       <Wordmark />
-      <CounterBadge />
-      <Panel tabs={TABS} />
+      <CounterBadge showActions={!embed} />
+      {!embed && <Panel tabs={TABS} />}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-3 p-4 pb-16 sm:p-6">
+      <div className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-3 p-4 sm:p-6 ${embed ? "" : "pb-16"}`}>
         <ObjectCard />
-        <ConjunctionCard />
-        <TimeControls />
+        {!embed && <ConjunctionCard />}
+        {!embed && <TimeControls />}
       </div>
-      <div className="absolute bottom-6 left-8 z-10 hidden sm:block">
-        <Legend />
-      </div>
-      <LocationPicker />
+      {!embed && (
+        <div className="absolute bottom-6 left-8 z-10 hidden sm:block">
+          <Legend />
+        </div>
+      )}
+      {!embed && <LocationPicker />}
     </main>
   );
 }

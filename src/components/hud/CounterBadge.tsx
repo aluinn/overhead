@@ -6,7 +6,7 @@ import { formatInt } from "@/lib/utils/format";
 import { useAppState } from "@/store/runtime";
 
 /** Headline stat: total in orbit, or "above you right now" once a location is set. */
-export function CounterBadge() {
+export function CounterBadge({ showActions = true }: { showActions?: boolean }) {
   const total = useAppState((s) => s.catalog?.count ?? 0);
   const status = useAppState((s) => s.status);
   const observer = useAppState((s) => s.observer);
@@ -24,13 +24,13 @@ export function CounterBadge() {
       <div className="pointer-events-none mt-1 font-mono text-[10px] tracking-[0.18em] text-[var(--muted)]">
         {status === "error" ? "NO DATA AVAILABLE" : sky ? `OBJECTS OVER ${observer.label.toUpperCase()} RIGHT NOW` : "OBJECTS IN ORBIT"}
       </div>
-      {status === "ready" && (
+      {status === "ready" && showActions && (
         <div className="flex flex-col items-end">
         <button
           type="button"
           onClick={() => (sky ? setObserver(null) : void locate())}
           disabled={locating === "locating"}
-          className="pointer-events-auto mt-3 rounded-sm border border-[var(--accent)]/50 px-2.5 py-1 font-mono text-[10px] tracking-[0.18em] text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10 disabled:opacity-60"
+          className={`pointer-events-auto mt-3 rounded-sm border border-[var(--accent)]/50 px-2.5 py-1 font-mono text-[10px] tracking-[0.18em] text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10 disabled:opacity-60 ${sky ? "" : "sm:hidden"}`}
         >
           {sky ? "← WORLD VIEW" : locating === "locating" ? "LOCATING…" : "◎ OVER MY HEAD"}
         </button>

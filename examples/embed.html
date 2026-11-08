@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Embedding OVERHEAD</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; font: 16px/1.6 system-ui, sans-serif; background: #03050a; color: #e6edf5; }
+      main { max-width: 760px; margin: 0 auto; padding: 48px 20px 80px; }
+      h1 { font-weight: 300; letter-spacing: -0.02em; }
+      code { font: 13px ui-monospace, Menlo, monospace; background: #0b1220; padding: 2px 6px; border-radius: 4px; }
+      pre { background: #0b1220; padding: 16px; border-radius: 6px; overflow: auto; }
+      .frame { position: relative; aspect-ratio: 16 / 10; border: 1px solid #1b2636; border-radius: 6px; overflow: hidden; }
+      .frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+      a { color: #38e1ff; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Embedding the OVERHEAD globe</h1>
+      <p>
+        Add <code>?embed=1</code> to any OVERHEAD URL and the interface collapses to the globe, the headline counter,
+        and hover/click cards. Replace the URL below with your own deployment (or
+        <code>http://localhost:3000/?embed=1</code> while developing).
+      </p>
+
+      <div class="frame">
+        <!-- Change `src` to your deployment. Nothing else is required. -->
+        <iframe
+          src="http://localhost:3000/?embed=1"
+          title="OVERHEAD: live satellites and debris around the Earth"
+          loading="lazy"
+          allow="fullscreen"
+        ></iframe>
+      </div>
+
+      <h2>Snippet</h2>
+<pre>&lt;div style="position:relative;aspect-ratio:16/10"&gt;
+  &lt;iframe
+    src="https://YOUR-DEPLOYMENT/?embed=1"
+    title="OVERHEAD"
+    loading="lazy"
+    style="position:absolute;inset:0;width:100%;height:100%;border:0"
+  &gt;&lt;/iframe&gt;
+&lt;/div&gt;</pre>
+
+      <p>
+        Orbital data come from <a href="https://celestrak.org">CelesTrak</a> via the host app's own API routes, so
+        embedding adds no extra load on CelesTrak.
+      </p>
+    </main>
+  </body>
+</html>
