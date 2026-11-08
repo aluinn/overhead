@@ -22,8 +22,9 @@ interface SampleFile {
 export function mergeGroups(groups: Partial<Record<GpGroup, CompactGp[]>>): CatalogObject[] {
   const byId = new Map<number, CatalogObject>();
   for (const group of GROUPS) {
-    const kind = GP_GROUPS[group];
     for (const gp of groups[group] ?? []) {
+      // The `active` group also lists Starlinks; classify by name so they never show up as plain satellites.
+      const kind = GP_GROUPS[group] === ObjectKind.Other && gp[1].startsWith("STARLINK") ? ObjectKind.Starlink : GP_GROUPS[group];
       const existing = byId.get(gp[0]);
       if (!existing) byId.set(gp[0], { gp, kind });
       else if (kind > existing.kind) byId.set(gp[0], { gp: existing.gp, kind });

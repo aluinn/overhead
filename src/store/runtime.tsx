@@ -4,8 +4,10 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { PositionStream } from "@/lib/three/positionStream";
 import { Clock } from "@/lib/utils/clock";
 import { PropagatorClient } from "@/lib/utils/rpc";
+import { EMPTY_VISIBLE, type VisibleSet } from "@/lib/orbital/lookAngles";
 import type { ObjectInfo } from "@/lib/orbital/propagate";
-import type { CompactGp, DataSource, ObjectKind } from "@/types";
+import type { Train } from "@/lib/orbital/trainDetection";
+import type { CompactGp, DataSource, Observer, ObjectKind } from "@/types";
 import { Store, useStore } from "./store";
 
 /** Immutable description of the loaded catalog, index-aligned with the worker. */
@@ -19,6 +21,18 @@ export interface Catalog {
   perKind: Record<ObjectKind, number>;
 }
 
+/** Objects above the horizon mask for the current observer; refreshed ~1 Hz. */
+export interface SkyState {
+  visible: VisibleSet;
+  /** Visible count per `ObjectKind`. */
+  byKind: Record<ObjectKind, number>;
+  /** Bumps on every refresh so memoised views can key off it. */
+  tick: number;
+}
+
+/** Elevation mask for "above you". */
+export const MIN_ELEVATION_DEG = 10;
+
 export interface AppState {
   status: "loading" | "ready" | "error";
   dataSource: DataSource | null;
@@ -28,7 +42,16 @@ export interface AppState {
   showTrail: boolean;
   /** Info for the selected object, refreshed while selected. */
   info: ObjectInfo | null;
+  observer: Observer | null;
+  sky: SkyState;
+  trains: Train[];
+  /** Per catalog index: train id, or -1. */
+  trainOf: Int16Array | null;
+  /** Location picker visibility. */
+  pickerOpen: boolean;
 }
+
+const emptyKinds = (): Record<ObjectKind, number> => ({ 0: 0, 1: 0, 2: 0, 3: 0 });
 
 const initialState: AppState = {
   status: "loading",
@@ -38,6 +61,11 @@ const initialState: AppState = {
   hovered: null,
   showTrail: true,
   info: null,
+  observer: null,
+  sky: { visible: EMPTY_VISIBLE, byKind: emptyKinds(), tick: 0 },
+  trains: [],
+  trainOf: null,
+  pickerOpen: false,
 };
 
 /** Everything long-lived: created once on the client, shared via context. */

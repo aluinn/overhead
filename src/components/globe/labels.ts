@@ -20,12 +20,14 @@ export class LabelLayer {
   }
 
   /** `variant` "tag" is a small pill; "hover" is a slightly brighter tooltip. */
-  create(key: string, variant: "tag" | "hover" = "tag"): LabelHandle {
+  create(key: string, variant: "tag" | "hover" | "train" = "tag"): LabelHandle {
     const el = document.createElement("div");
     el.className =
       variant === "tag"
         ? "absolute left-0 top-0 hidden whitespace-nowrap font-mono text-[10px] tracking-[0.14em] text-[#ffc83d]"
-        : "absolute left-0 top-0 hidden whitespace-nowrap rounded-sm border border-[var(--line)] bg-black/60 px-1.5 py-0.5 font-mono text-[10px] tracking-wider text-[var(--fg)] backdrop-blur-sm";
+        : variant === "train"
+          ? "absolute left-0 top-0 hidden whitespace-nowrap font-mono text-[10px] tracking-[0.14em] text-[var(--accent)]"
+          : "absolute left-0 top-0 hidden whitespace-nowrap rounded-sm border border-[var(--line)] bg-black/60 px-1.5 py-0.5 font-mono text-[10px] tracking-wider text-[var(--fg)] backdrop-blur-sm";
     this.root.appendChild(el);
     this.labels.set(key, el);
 

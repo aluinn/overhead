@@ -32,6 +32,8 @@ export interface SatellitePointsHandle {
   /** Call every frame: syncs GPU buffers with the stream and sets the lerp factor. */
   update(stream: PositionStream, selected: number | null, hovered: number | null): void;
   setKinds(kinds: ArrayLike<number>): void;
+  /** Mark objects above the observer (`visible` indices) and train members; `dim` fades the rest. */
+  setFlags(visible: ArrayLike<number> | null, trainOf: ArrayLike<number> | null, dim: boolean): void;
   setPixelRatio(ratio: number): void;
   dispose(): void;
 }
@@ -43,6 +45,7 @@ export function createSatellitePoints(): SatellitePointsHandle {
     uniforms: {
       uAlpha: { value: 0 },
       uPixelRatio: { value: 1 },
+      uDim: { value: 0 },
       uSelected: { value: -1 },
       uHovered: { value: -1 },
       uColors: { value: [ObjectKind.Other, ObjectKind.Debris, ObjectKind.Starlink, ObjectKind.Station].map((k) => new Color(KIND_COLORS[k as ObjectKind])) },
@@ -60,6 +63,8 @@ export function createSatellitePoints(): SatellitePointsHandle {
   let kinds: ArrayLike<number> = new Uint8Array(0);
   let boundGeneration = -1;
   let boundVersion = -1;
+  let flags = new Float32Array(0);
+  let flagAttr: BufferAttribute | null = null;
   let prevAttr: BufferAttribute | null = null;
   let nextAttr: BufferAttribute | null = null;
 
@@ -75,6 +80,9 @@ export function createSatellitePoints(): SatellitePointsHandle {
     const kindAttr = new Float32Array(stream.count);
     for (let i = 0; i < stream.count; i++) kindAttr[i] = kinds[i] ?? 0;
     geo.setAttribute("aKind", new BufferAttribute(kindAttr, 1));
+    if (flags.length !== stream.count) flags = new Float32Array(stream.count);
+    flagAttr = new BufferAttribute(flags, 1).setUsage(35048);
+    geo.setAttribute("aFlag", flagAttr);
     points.geometry = geo;
     boundGeneration = stream.generation;
     boundVersion = -1;
@@ -85,6 +93,13 @@ export function createSatellitePoints(): SatellitePointsHandle {
     setKinds(k) {
       kinds = k;
       boundGeneration = -1; // force rebuild on next update
+    },
+    setFlags(visible, trainOf, dim) {
+      flags.fill(0);
+      if (visible) for (let k = 0; k < visible.length; k++) flags[visible[k]] |= 1;
+      if (trainOf) for (let i = 0; i < Math.min(trainOf.length, flags.length); i++) if (trainOf[i] >= 0) flags[i] |= 2;
+      material.uniforms.uDim.value = dim ? 1 : 0;
+      if (flagAttr) flagAttr.needsUpdate = true;
     },
     update(stream, selected, hovered) {
       if (stream.count === 0) return;

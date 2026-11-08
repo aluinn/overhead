@@ -137,8 +137,12 @@ export const satVertex = /* glsl */ `
   attribute vec3 aPrev;
   attribute vec3 aNext;
   attribute float aKind;
+  // Bit flags as float: 1 = above the observer, 2 = member of a Starlink train.
+  attribute float aFlag;
 
   uniform float uAlpha;
+  // 0..1: how much to fade objects that are NOT above the observer (sky mode).
+  uniform float uDim;
   uniform float uPixelRatio;
   uniform float uSelected;
   uniform float uHovered;
@@ -156,6 +160,12 @@ export const satVertex = /* glsl */ `
     vColor = uColors[kind];
     vAlpha = 0.9;
     vRing = 0.0;
+
+    bool above = mod(aFlag, 2.0) > 0.5;
+    bool train = aFlag > 1.5;
+    if (above) { size *= 1.9; vAlpha = 1.0; vColor = mix(vColor, vec3(1.0), 0.25); }
+    else { vAlpha *= 1.0 - uDim * 0.7; }
+    if (train) { size *= 1.5; vColor = mix(vColor, vec3(0.75, 1.0, 1.0), 0.5); vAlpha = max(vAlpha, 0.95); }
 
     float id = float(gl_VertexID);
     if (id == uSelected) { size = 15.0; vColor = vec3(1.0); vAlpha = 1.0; vRing = 1.0; }

@@ -77,6 +77,14 @@ export class PositionStream {
     out.z = this.prev[o + 2] + (this.next[o + 2] - this.prev[o + 2]) * a;
   }
 
+  /** Current interpolated positions for all objects, written into `out` (allocated if omitted). */
+  current(out: Float32Array = new Float32Array(this.count * 3)): Float32Array {
+    const a = this.alpha();
+    const { prev, next } = this;
+    for (let i = 0; i < out.length; i++) out[i] = prev[i] + (next[i] - prev[i]) * a;
+    return out;
+  }
+
   private schedule(delay: number): void {
     if (!this.running) return;
     window.clearTimeout(this.timer);

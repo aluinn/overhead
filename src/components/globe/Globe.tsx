@@ -3,14 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import { ACESFilmicToneMapping, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { footprintAngleDeg } from "@/lib/orbital/lookAngles";
 import { sunDirectionEcef } from "@/lib/orbital/sun";
 import { CameraRig } from "@/lib/three/camera";
 import { latLonToScene } from "@/lib/three/coords";
 import { pickNearest, projectToScreen } from "@/lib/three/picking";
-import { useRuntime } from "@/store/runtime";
+import { MIN_ELEVATION_DEG, useRuntime } from "@/store/runtime";
 import { createAtmosphere } from "./Atmosphere";
 import { createEarth } from "./Earth";
 import { LabelLayer } from "./labels";
+import { createObserverMarker } from "./ObserverMarker";
 import { createOrbitTrail } from "./OrbitTrail";
 import { createSatellitePoints } from "./SatellitePoints";
 import { createStarfield } from "./Starfield";
@@ -20,6 +22,9 @@ const MAX_DISTANCE = 12;
 const HOME_DISTANCE = 3.6;
 const AUTO_ROTATE_RESUME_MS = 4000;
 const TRAIL_STEPS = 200;
+const MAX_TRAIN_LABELS = 5;
+/** Typical Starlink shell altitude, used to size the on-ground horizon ring. */
+const STARLINK_ALT_KM = 550;
 
 /** NORAD ids that get permanent on-globe labels. */
 const LABELLED: Array<{ id: number; text: string }> = [
@@ -89,11 +94,13 @@ export function Globe() {
     const trail = createOrbitTrail();
     stars.setPixelRatio(pixelRatio);
     points.setPixelRatio(pixelRatio);
-    scene.add(stars.object, earth.object, trail.object, points.object, atmosphere.object);
+    const marker = createObserverMarker();
+    scene.add(stars.object, earth.object, trail.object, marker.object, points.object, atmosphere.object);
 
     const labelLayer = new LabelLayer(container);
     const labelHandles = LABELLED.map((l) => ({ ...l, handle: labelLayer.create(`sat-${l.id}`), index: -1 }));
     const hoverLabel = labelLayer.create("hover", "hover");
+    const trainLabels = Array.from({ length: MAX_TRAIN_LABELS }, (_, i) => labelLayer.create(`train-${i}`, "train"));
 
     const updateSun = () => {
       const dir = sunDirectionEcef(new Date(clock.now()));
@@ -228,9 +235,34 @@ export function Globe() {
         .catch(() => undefined);
     };
 
+    // Flags (above-you / train members) and observer marker follow the store.
+    let flaggedTick = -1;
+    let flaggedTrains: Int16Array | null = null;
+    let flaggedObserver: ReturnType<typeof store.get>["observer"] = null;
+    const syncSky = () => {
+      const s = store.get();
+      if (s.observer !== flaggedObserver) {
+        flaggedObserver = s.observer;
+        marker.set(s.observer, footprintAngleDeg(STARLINK_ALT_KM, MIN_ELEVATION_DEG));
+        if (s.observer) {
+          controls.autoRotate = false;
+          window.clearTimeout(resumeTimer);
+          rig.flyTo(latLonToScene(s.observer.latDeg, s.observer.lonDeg), 2.7, new Vector3(), 2200);
+        }
+        flaggedTick = -1;
+      }
+      if (s.sky.tick !== flaggedTick || s.trainOf !== flaggedTrains) {
+        flaggedTick = s.sky.tick;
+        flaggedTrains = s.trainOf;
+        const { visible } = s.sky;
+        points.setFlags(s.observer ? visible.indices.subarray(0, visible.count) : null, s.trainOf, s.observer !== null);
+      }
+    };
+
     const onStore = () => {
       const s = store.get();
       bindCatalog();
+      syncSky();
       if (s.selected !== lastSelected) {
         lastSelected = s.selected;
         trailKey = "";
@@ -250,6 +282,7 @@ export function Globe() {
       }
       refreshTrail();
     };
+    syncSky();
     const unsubscribe = store.subscribe(onStore);
     const infoTimer = window.setInterval(pollInfo, 500);
     const trailTimer = window.setInterval(refreshTrail, 1000);
@@ -260,6 +293,7 @@ export function Globe() {
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
       stars.update((now - t0) / 1000);
+      marker.update((now - t0) / 1000);
       rig.update(now);
       controls.update();
       camera.updateMatrixWorld();
@@ -284,6 +318,15 @@ export function Globe() {
         }
         stream.positionAt(l.index, alpha, tmp);
         l.handle.place(projectToScreen(camera, tmp.x, tmp.y, tmp.z, width, height), l.text);
+      }
+      for (let i = 0; i < trainLabels.length; i++) {
+        const train = s.trains[i];
+        if (!train) {
+          trainLabels[i].place(null);
+          continue;
+        }
+        stream.positionAt(train.members[train.members.length >> 1], alpha, tmp);
+        trainLabels[i].place(projectToScreen(camera, tmp.x, tmp.y, tmp.z, width, height), `TRAIN ×${train.members.length}`);
       }
       if (s.hovered !== null && s.hovered !== s.selected && s.catalog) {
         stream.positionAt(s.hovered, alpha, tmp);
@@ -317,6 +360,7 @@ export function Globe() {
       .then(() => {
         if (disposed) return;
         setLoaded(true);
+        if (store.get().observer) return; // a saved location already steered the camera
         const guessLon = -new Date().getTimezoneOffset() / 4;
         rig.flyTo(latLonToScene(28, guessLon), HOME_DISTANCE, new Vector3(), 3200);
       })
@@ -350,6 +394,7 @@ export function Globe() {
       stars.dispose();
       points.dispose();
       trail.dispose();
+      marker.dispose();
       renderer.dispose();
       canvas.remove();
     };

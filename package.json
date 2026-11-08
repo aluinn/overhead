@@ -2,11 +2,18 @@
   "name": "overhead",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "bench": "node scripts/benchmark-propagation.ts",
+    "fetch-sample": "node scripts/fetch-sample-data.ts"
   },
   "dependencies": {
     "next": "16.4.5",

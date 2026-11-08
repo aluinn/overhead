@@ -1,0 +1,48 @@
+{
+  "valid": [
+    {
+      "OBJECT_NAME": "ISS (ZARYA)",
+      "OBJECT_ID": "1998-067A",
+      "EPOCH": "2026-11-08T04:12:35.430048",
+      "MEAN_MOTION": 15.49256954,
+      "ECCENTRICITY": 0.0007219,
+      "INCLINATION": 51.632,
+      "RA_OF_ASC_NODE": 307.5621,
+      "ARG_OF_PERICENTER": 1.6306,
+      "MEAN_ANOMALY": 358.4705,
+      "EPHEMERIS_TYPE": 0,
+      "CLASSIFICATION_TYPE": "U",
+      "NORAD_CAT_ID": 25544,
+      "ELEMENT_SET_NO": 999,
+      "REV_AT_EPOCH": 59407,
+      "BSTAR": 0.00023266166,
+      "MEAN_MOTION_DOT": 0.00012511,
+      "MEAN_MOTION_DDOT": 0
+    }
+  ],
+  "invalid": [
+    {
+      "OBJECT_NAME": "BROKEN",
+      "NORAD_CAT_ID": 1,
+      "EPOCH": "2026-01-01T00:00:00",
+      "MEAN_MOTION": "not-a-number"
+    },
+    {
+      "OBJECT_NAME": "ZERO MM",
+      "OBJECT_ID": "x",
+      "NORAD_CAT_ID": 2,
+      "EPOCH": "2026-01-01T00:00:00",
+      "MEAN_MOTION": 0,
+      "ECCENTRICITY": 0,
+      "INCLINATION": 0,
+      "RA_OF_ASC_NODE": 0,
+      "ARG_OF_PERICENTER": 0,
+      "MEAN_ANOMALY": 0,
+      "BSTAR": 0,
+      "MEAN_MOTION_DOT": 0,
+      "MEAN_MOTION_DDOT": 0
+    },
+    null,
+    "x"
+  ]
+}
