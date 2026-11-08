@@ -100,6 +100,15 @@ export class Runtime {
   readonly clock = new Clock();
   client: PropagatorClient | null = null;
   stream: PositionStream | null = null;
+  /**
+   * Registered by the Globe: renders one frame and returns a copy of the
+   * WebGL canvas (the drawing buffer is only valid right after a render).
+   */
+  capture: (() => HTMLCanvasElement) | null = null;
+
+  setCapture(fn: (() => HTMLCanvasElement) | null): void {
+    this.capture = fn;
+  }
 
   init(): void {
     if (this.client) return;

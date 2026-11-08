@@ -1,4 +1,4 @@
-import { R_EARTH_KM } from "./propagate";
+import { R_EARTH_KM } from "./propagate.ts";
 
 export interface TrainOptions {
   /** Max distance between chained neighbours, km. */

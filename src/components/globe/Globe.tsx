@@ -88,7 +88,8 @@ export function Globe() {
     controls.maxDistance = MAX_DISTANCE;
     controls.rotateSpeed = 0.5;
     controls.zoomSpeed = 0.7;
-    controls.autoRotate = true;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    controls.autoRotate = !reducedMotion;
     controls.autoRotateSpeed = 0.35;
 
     const rig = new CameraRig(camera, controls);
@@ -105,6 +106,15 @@ export function Globe() {
     const trailB = createOrbitTrail(PAIR_COLOR_B);
     const connector = createConnector();
     scene.add(stars.object, earth.object, trail.object, trailA.object, trailB.object, connector.object, marker.object, points.object, atmosphere.object);
+
+    runtime.setCapture(() => {
+      renderer.render(scene, camera);
+      const copy = document.createElement("canvas");
+      copy.width = canvas.width;
+      copy.height = canvas.height;
+      copy.getContext("2d")?.drawImage(canvas, 0, 0);
+      return copy;
+    });
 
     const labelLayer = new LabelLayer(container);
     const labelHandles = LABELLED.map((l) => ({ ...l, handle: labelLayer.create(`sat-${l.id}`), index: -1 }));
@@ -197,6 +207,7 @@ export function Globe() {
     const onEnd = () => {
       window.clearTimeout(resumeTimer);
       if (store.get().selected !== null) return;
+      if (reducedMotion) return;
       resumeTimer = window.setTimeout(() => {
         controls.autoRotate = true;
       }, AUTO_ROTATE_RESUME_MS);
@@ -284,7 +295,7 @@ export function Globe() {
           const dist = Math.min(Math.max(camera.position.length(), 2.3), HOME_DISTANCE);
           rig.flyTo(new Vector3(tmp.x, tmp.y, tmp.z), dist, new Vector3(), 1400);
           pollInfo();
-        } else {
+        } else if (!reducedMotion) {
           resumeTimer = window.setTimeout(() => {
             controls.autoRotate = true;
           }, AUTO_ROTATE_RESUME_MS);
@@ -448,6 +459,7 @@ export function Globe() {
       controls.dispose();
       observer.disconnect();
       labelLayer.dispose();
+      runtime.setCapture(null);
       earth.dispose();
       atmosphere.dispose();
       stars.dispose();

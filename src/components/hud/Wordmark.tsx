@@ -8,7 +8,7 @@ export function Wordmark() {
         </span>
         <h1 className="font-mono text-[13px] font-medium tracking-[0.32em] text-[var(--fg)]">OVERHEAD</h1>
       </div>
-      <p className="mt-1.5 font-mono text-[10px] tracking-[0.18em] text-[var(--muted)]">
+      <p className="mt-1.5 hidden font-mono sm:block text-[10px] tracking-[0.18em] text-[var(--muted)]">
         EVERYTHING IN ORBIT, RIGHT NOW
       </p>
     </header>

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { pickScanSubset } from "@/lib/orbital/conjunction";
 import { useAppState, useRuntime, type Catalog, type ConjunctionView } from "@/store/runtime";
+import { useWorker } from "./useWorker";
 import type { Conjunction, ConjunctionResponse } from "@/types";
 
 const SCAN_MAX_OBJECTS = 320;
@@ -25,6 +26,7 @@ export function resolveConjunctions(items: Conjunction[], catalog: Catalog): Con
  */
 export function useConjunctions(): void {
   const runtime = useRuntime();
+  const getClient = useWorker();
   const catalog = useAppState((s) => s.catalog);
   const ready = useAppState((s) => s.status === "ready");
   const raw = useAppState((s) => s.conjunctionsRaw);
@@ -49,7 +51,7 @@ export function useConjunctions(): void {
   // Resolve against the catalog; run the local fallback scan when SOCRATES gave us nothing real.
   useEffect(() => {
     if (!catalog || !ready || !raw) return;
-    const { store, client } = runtime;
+    const { store } = runtime;
 
     if (raw.source !== "sample") {
       store.set({ conjunctions: { status: "ready", source: raw.source, scanned: 0, items: resolveConjunctions(raw.conjunctions, catalog) } });
@@ -59,6 +61,7 @@ export function useConjunctions(): void {
     // Fallback: wait for the catalog to settle (it grows as groups arrive), then scan.
     let cancelled = false;
     const timer = window.setTimeout(() => {
+      const client = getClient();
       if (!client) return;
       const subset = pickScanSubset(catalog.kinds, catalog.gps, SCAN_MAX_OBJECTS);
       client
@@ -89,5 +92,5 @@ export function useConjunctions(): void {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [runtime, catalog, ready, raw]);
+  }, [runtime, getClient, catalog, ready, raw]);
 }

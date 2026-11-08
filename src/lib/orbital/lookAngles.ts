@@ -1,4 +1,4 @@
-import { R_EARTH_KM } from "./propagate";
+import { R_EARTH_KM } from "./propagate.ts";
 
 const DEG = 180 / Math.PI;
 const RAD = Math.PI / 180;

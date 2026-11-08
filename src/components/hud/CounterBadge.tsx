@@ -1,5 +1,6 @@
 "use client";
 
+import { ShareButton } from "@/components/share/ShareButton";
 import { useObserverActions } from "@/hooks/useObserver";
 import { formatInt } from "@/lib/utils/format";
 import { useAppState } from "@/store/runtime";
@@ -24,6 +25,7 @@ export function CounterBadge() {
         {status === "error" ? "NO DATA AVAILABLE" : sky ? `OBJECTS OVER ${observer.label.toUpperCase()} RIGHT NOW` : "OBJECTS IN ORBIT"}
       </div>
       {status === "ready" && (
+        <div className="flex flex-col items-end">
         <button
           type="button"
           onClick={() => (sky ? setObserver(null) : void locate())}
@@ -32,6 +34,8 @@ export function CounterBadge() {
         >
           {sky ? "← WORLD VIEW" : locating === "locating" ? "LOCATING…" : "◎ OVER MY HEAD"}
         </button>
+        <ShareButton />
+        </div>
       )}
     </div>
   );
