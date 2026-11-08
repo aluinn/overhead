@@ -7,6 +7,7 @@
  * both ends of the RPC layer are derived from them.
  */
 import type { CatalogObject, ObjectKind } from "@/types";
+import type { LocalConjunction, PairState } from "@/lib/orbital/conjunction";
 import type { ObjectInfo } from "@/lib/orbital/propagate";
 
 export interface Requests {
@@ -25,6 +26,15 @@ export interface Requests {
 
   /** Path of one object from `startMs` over `spanMs`, as scene-space points. */
   trail: { index: number; startMs: number; spanMs: number; steps: number };
+
+  /** Positions of two objects at a time plus their separation (used to frame a conjunction). */
+  pairState: { indexA: number; indexB: number; timeMs: number };
+
+  /**
+   * Fallback close-approach search among a subset of the catalog (used when
+   * SOCRATES is unreachable). Indices refer to the loaded catalog.
+   */
+  scan: { indices: number[]; startMs: number; durationMs: number; stepMs: number; thresholdKm: number; limit: number };
 }
 
 export interface Responses {
@@ -32,6 +42,8 @@ export interface Responses {
   propagate: { timeMs: number; buffer: ArrayBuffer };
   inspect: { info: ObjectInfo | null };
   trail: { positions: Float32Array };
+  pairState: { state: PairState | null };
+  scan: { events: LocalConjunction[]; scanned: number };
 }
 
 export type RequestType = keyof Requests;

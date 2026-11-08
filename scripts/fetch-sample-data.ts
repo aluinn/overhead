@@ -46,8 +46,10 @@ function evenlySpaced<T>(all: T[], n: number): T[] {
 }
 
 const groups: Record<string, CompactGp[]> = {};
+const full: Record<string, CompactGp[]> = {};
 for (const [group, keep] of Object.entries(PLAN)) {
   const all = await getGroup(group);
+  full[group] = all;
   groups[group] =
     group === "starlink" ? pickStarlink(all, keep) : group === "stations" ? all : evenlySpaced(all, keep);
   console.log(`${group}: kept ${groups[group].length} of ${all.length}`);
@@ -57,6 +59,26 @@ console.log("fetching SOCRATES (~20 MB)…");
 const csv = await (await fetch(SOCRATES_URL, { headers: { "user-agent": UA } })).text();
 const conjunctions = parseSocratesCsv(csv, { limit: 40, notBeforeMs: Date.now(), minRelSpeedKmS: 0.5 });
 console.log(`conjunctions: kept ${conjunctions.length}`);
+
+// Make sure every object named in a sample conjunction is also in the sample
+// catalog, otherwise the feed would list events the globe can't show.
+const have = new Set(Object.values(groups).flatMap((g) => g.map((r) => r[0])));
+let added = 0;
+for (const c of conjunctions) {
+  for (const id of [c.noradId1, c.noradId2]) {
+    if (have.has(id)) continue;
+    for (const [group, records] of Object.entries(full)) {
+      const rec = records.find((r) => r[0] === id);
+      if (rec) {
+        groups[group].push(rec);
+        have.add(id);
+        added++;
+        break;
+      }
+    }
+  }
+}
+console.log(`added ${added} objects referenced by sample conjunctions`);
 
 const out = path.join(import.meta.dirname, "..", "public", "data", "sample-gp.json");
 await mkdir(path.dirname(out), { recursive: true });

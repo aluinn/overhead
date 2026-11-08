@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
 import type { SatRec } from "satellite.js";
+import { pairState, scanConjunctions } from "@/lib/orbital/conjunction";
 import { fillScenePositions, inspectObject, sampleTrail, satrecFromCompact } from "@/lib/orbital/propagate";
 import type { CatalogObject } from "@/types";
 import type { RequestType, Requests, Responses, WorkerRequest, WorkerResponse } from "./messages";
@@ -58,6 +59,24 @@ const handlers: Handlers = {
     const sat = catalog.sats[index];
     const obj = catalog.objects[index];
     return { result: { info: sat && obj ? inspectObject(sat, obj.gp, timeMs) : null } };
+  },
+
+  async pairState({ indexA, indexB, timeMs }) {
+    const a = catalog.sats[indexA];
+    const b = catalog.sats[indexB];
+    return { result: { state: a && b ? pairState(a, b, timeMs) : null } };
+  },
+
+  async scan({ indices, startMs, durationMs, stepMs, thresholdKm, limit }) {
+    const events = await scanConjunctions(catalog.sats, indices, {
+      startMs,
+      durationMs,
+      stepMs,
+      thresholdKm,
+      limit,
+      yieldEvery: yieldToEventLoop,
+    });
+    return { result: { events, scanned: indices.length } };
   },
 
   async trail({ index, startMs, spanMs, steps }) {

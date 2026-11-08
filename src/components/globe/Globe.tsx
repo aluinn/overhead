@@ -12,17 +12,23 @@ import { MIN_ELEVATION_DEG, useRuntime } from "@/store/runtime";
 import { createAtmosphere } from "./Atmosphere";
 import { createEarth } from "./Earth";
 import { LabelLayer } from "./labels";
+import { createConnector } from "./Connector";
 import { createObserverMarker } from "./ObserverMarker";
 import { createOrbitTrail } from "./OrbitTrail";
 import { createSatellitePoints } from "./SatellitePoints";
 import { createStarfield } from "./Starfield";
 
-const MIN_DISTANCE = 1.35;
+const MIN_DISTANCE = 1.06;
 const MAX_DISTANCE = 12;
 const HOME_DISTANCE = 3.6;
 const AUTO_ROTATE_RESUME_MS = 4000;
 const TRAIL_STEPS = 200;
 const MAX_TRAIN_LABELS = 5;
+/** Start a close-approach replay this long before TCA so you watch the objects converge. */
+const CONJUNCTION_LEAD_MS = 25_000;
+const CONJUNCTION_TRAIL_MS = 24 * 60_000;
+const CONJUNCTION_CAMERA_DISTANCE = 1.32;
+const PAIR_COLOR_B = "#ff8a4c";
 /** Typical Starlink shell altitude, used to size the on-ground horizon ring. */
 const STARLINK_ALT_KM = 550;
 
@@ -95,11 +101,15 @@ export function Globe() {
     stars.setPixelRatio(pixelRatio);
     points.setPixelRatio(pixelRatio);
     const marker = createObserverMarker();
-    scene.add(stars.object, earth.object, trail.object, marker.object, points.object, atmosphere.object);
+    const trailA = createOrbitTrail("#38e1ff");
+    const trailB = createOrbitTrail(PAIR_COLOR_B);
+    const connector = createConnector();
+    scene.add(stars.object, earth.object, trail.object, trailA.object, trailB.object, connector.object, marker.object, points.object, atmosphere.object);
 
     const labelLayer = new LabelLayer(container);
     const labelHandles = LABELLED.map((l) => ({ ...l, handle: labelLayer.create(`sat-${l.id}`), index: -1 }));
     const hoverLabel = labelLayer.create("hover", "hover");
+    const pairLabel = labelLayer.create("pair", "hover");
     const trainLabels = Array.from({ length: MAX_TRAIN_LABELS }, (_, i) => labelLayer.create(`train-${i}`, "train"));
 
     const updateSun = () => {
@@ -281,6 +291,44 @@ export function Globe() {
         }
       }
       refreshTrail();
+      syncConjunction();
+    };
+
+    // ---- close approach: time-travel, frame both objects, draw both paths -------------
+    let shownConjunction: ReturnType<typeof store.get>["activeConjunction"] = null;
+    const syncConjunction = () => {
+      const c = store.get().activeConjunction;
+      if (c === shownConjunction) return;
+      shownConjunction = c;
+      trailA.setPositions(new Float32Array(0));
+      trailB.setPositions(new Float32Array(0));
+      connector.set(false);
+      if (!c) return;
+
+      controls.autoRotate = false;
+      window.clearTimeout(resumeTimer);
+      clock.setSpeed(1);
+      clock.seek(c.tcaMs - CONJUNCTION_LEAD_MS);
+
+      void client
+        .call("pairState", { indexA: c.indexA, indexB: c.indexB, timeMs: c.tcaMs })
+        .then(({ state }) => {
+          if (disposed || store.get().activeConjunction !== c || !state) return;
+          const mid = new Vector3((state.a[0] + state.b[0]) / 2, (state.a[1] + state.b[1]) / 2, (state.a[2] + state.b[2]) / 2);
+          rig.flyTo(mid, CONJUNCTION_CAMERA_DISTANCE, new Vector3(), 2400);
+        })
+        .catch(() => undefined);
+
+      const startMs = c.tcaMs - CONJUNCTION_TRAIL_MS / 2;
+      for (const [index, line] of [[c.indexA, trailA], [c.indexB, trailB]] as const) {
+        void client
+          .call("trail", { index, startMs, spanMs: CONJUNCTION_TRAIL_MS, steps: 160 })
+          .then(({ positions }) => {
+            if (!disposed && store.get().activeConjunction === c) line.setPositions(positions);
+          })
+          .catch(() => undefined);
+      }
+      connector.set(true);
     };
     syncSky();
     const unsubscribe = store.subscribe(onStore);
@@ -307,7 +355,8 @@ export function Globe() {
         canvas.style.cursor = hit === null ? "" : "pointer";
       }
 
-      points.update(stream, s.selected, s.hovered);
+      const pair = s.activeConjunction;
+      points.update(stream, pair ? pair.indexA : s.selected, pair ? pair.indexB : s.hovered);
 
       // Labels
       const alpha = stream.alpha();
@@ -328,7 +377,17 @@ export function Globe() {
         stream.positionAt(train.members[train.members.length >> 1], alpha, tmp);
         trainLabels[i].place(projectToScreen(camera, tmp.x, tmp.y, tmp.z, width, height), `TRAIN ×${train.members.length}`);
       }
-      if (s.hovered !== null && s.hovered !== s.selected && s.catalog) {
+      if (pair) {
+        stream.positionAt(pair.indexA, alpha, tmp);
+        const ax = tmp.x, ay = tmp.y, az = tmp.z;
+        stream.positionAt(pair.indexB, alpha, tmp);
+        connector.update(ax, ay, az, tmp.x, tmp.y, tmp.z);
+        const km = Math.hypot(ax - tmp.x, ay - tmp.y, az - tmp.z) * 6371;
+        pairLabel.place(projectToScreen(camera, (ax + tmp.x) / 2, (ay + tmp.y) / 2, (az + tmp.z) / 2, width, height), `${km < 100 ? km.toFixed(1) : Math.round(km)} km`);
+      } else {
+        pairLabel.place(null);
+      }
+      if (s.hovered !== null && s.hovered !== s.selected && s.catalog && !pair) {
         stream.positionAt(s.hovered, alpha, tmp);
         hoverLabel.place(projectToScreen(camera, tmp.x, tmp.y, tmp.z, width, height), s.catalog.names[s.hovered]);
       } else {
@@ -394,6 +453,9 @@ export function Globe() {
       stars.dispose();
       points.dispose();
       trail.dispose();
+      trailA.dispose();
+      trailB.dispose();
+      connector.dispose();
       marker.dispose();
       renderer.dispose();
       canvas.remove();

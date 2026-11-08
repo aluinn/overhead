@@ -7,7 +7,7 @@ import { PropagatorClient } from "@/lib/utils/rpc";
 import { EMPTY_VISIBLE, type VisibleSet } from "@/lib/orbital/lookAngles";
 import type { ObjectInfo } from "@/lib/orbital/propagate";
 import type { Train } from "@/lib/orbital/trainDetection";
-import type { CompactGp, DataSource, Observer, ObjectKind } from "@/types";
+import type { CompactGp, Conjunction, ConjunctionResponse, DataSource, Observer, ObjectKind } from "@/types";
 import { Store, useStore } from "./store";
 
 /** Immutable description of the loaded catalog, index-aligned with the worker. */
@@ -33,6 +33,21 @@ export interface SkyState {
 /** Elevation mask for "above you". */
 export const MIN_ELEVATION_DEG = 10;
 
+/** A conjunction with its objects resolved to catalog indices (-1 when we don't track that object). */
+export interface ConjunctionView extends Conjunction {
+  indexA: number;
+  indexB: number;
+}
+
+export interface ConjunctionState {
+  status: "idle" | "loading" | "ready" | "error";
+  /** Where the events came from; "computed" = fallback scan in the worker. */
+  source: "socrates" | "stale-cache" | "sample" | "computed" | null;
+  /** For "computed": how many objects the scan covered. */
+  scanned: number;
+  items: ConjunctionView[];
+}
+
 export interface AppState {
   status: "loading" | "ready" | "error";
   dataSource: DataSource | null;
@@ -49,6 +64,13 @@ export interface AppState {
   trainOf: Int16Array | null;
   /** Location picker visibility. */
   pickerOpen: boolean;
+  conjunctions: ConjunctionState;
+  /** Unresolved response from /api/conjunctions (null until it arrives). */
+  conjunctionsRaw: ConjunctionResponse | null;
+  /** The close approach currently being shown on the globe. */
+  activeConjunction: ConjunctionView | null;
+  /** Feed filter: hide events involving objects we aren't drawing. */
+  trackedOnly: boolean;
 }
 
 const emptyKinds = (): Record<ObjectKind, number> => ({ 0: 0, 1: 0, 2: 0, 3: 0 });
@@ -66,6 +88,10 @@ const initialState: AppState = {
   trains: [],
   trainOf: null,
   pickerOpen: false,
+  conjunctions: { status: "idle", source: null, scanned: 0, items: [] },
+  conjunctionsRaw: null,
+  activeConjunction: null,
+  trackedOnly: true,
 };
 
 /** Everything long-lived: created once on the client, shared via context. */
