@@ -33,7 +33,7 @@
     "next": "16.4.5",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "satellite.js": "^7.1.0",
+    "satellite.js": "^7.2.0",
     "three": "^0.187.0"
   },
   "devDependencies": {
